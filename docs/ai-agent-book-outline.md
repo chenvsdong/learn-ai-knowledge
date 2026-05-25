@@ -79,6 +79,7 @@
 
 这一部分对应后端工程师的优势：把 Agent 从 Demo 变成稳定系统。
 
+- Agent Harness Engineering：从 Demo 到生产的可靠性工程
 - AI Agent 后端架构
 - 可观测性与评估
 - 安全与权限
