@@ -41,4 +41,10 @@ npm run build
 3. 构建静态页面。
 4. 发布到 GitHub Pages。
 
-首次使用时，需要在 GitHub 仓库设置里打开 Pages，并将 Source 选择为 GitHub Actions。
+首次使用时，需要先在 GitHub 仓库设置里启用 Pages：
+
+1. 打开仓库的 `Settings -> Pages`。
+2. 在 `Build and deployment` 中将 `Source` 选择为 `GitHub Actions`。
+3. 保存后重新运行 `Deploy Web Book` workflow，或重新推送一次 `main` 分支。
+
+GitHub 默认的 `GITHUB_TOKEN` 通常不能自动创建 Pages site，所以首次启用需要在页面上手动完成一次。
