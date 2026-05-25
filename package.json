@@ -1,0 +1,22 @@
+{
+  "name": "learn-ai-knowledge",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run content:build && vite",
+    "build": "npm run content:build && vite build",
+    "preview": "vite preview",
+    "content:build": "node scripts/build-content.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^7.0.0",
+    "typescript": "^5.8.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "marked": "^15.0.12",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {}
+}

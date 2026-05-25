@@ -1,0 +1,351 @@
+{
+    "title": "AI Agent 开发：从大模型原理到工程化落地",
+    "shortTitle": "AI Agent Web Book",
+    "start": "00-book-outline",
+    "parts": [
+      {
+        "id": "part-00",
+        "title": "开始阅读",
+        "chapters": [
+          {
+            "id": "00-book-outline",
+            "order": "00",
+            "title": "全书大纲与写作逻辑",
+            "level": "导读",
+            "status": "draft",
+            "tags": ["大纲", "学习路径", "AI Agent"],
+            "source": "content/chapters/00-book-outline.md",
+            "summary": ["理解整本书的组织方式", "明确后续内容如何持续扩写", "建立从 LLM 到 Agent 工程化的学习路径"]
+          }
+        ]
+      },
+      {
+        "id": "part-01",
+        "title": "第一部分：AI 与大模型基础",
+        "chapters": [
+          {
+            "id": "01-ai-ml-dl-llm",
+            "order": "01",
+            "title": "AI、机器学习、深度学习与大模型的关系",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["AI", "LLM", "基础概念"],
+            "source": "content/chapters/01-ai-ml-dl-llm.md",
+            "summary": ["AI 领域整体地图", "传统 AI、机器学习、深度学习、生成式 AI 的区别", "AI Agent 在技术体系中的位置"]
+          },
+          {
+            "id": "02-llm-principles",
+            "order": "02",
+            "title": "LLM 的基本原理",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["LLM", "Transformer", "Token"],
+            "source": "content/chapters/02-llm-principles.md",
+            "summary": ["Token、Embedding、Transformer、Attention", "预训练、微调、对齐", "幻觉、上下文窗口、概率输出的本质"]
+          },
+          {
+            "id": "03-model-selection",
+            "order": "03",
+            "title": "主流模型与能力边界",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["模型选择", "多模态", "推理模型"],
+            "source": "content/chapters/03-model-selection.md",
+            "summary": ["Chat 模型、推理模型、多模态模型", "主流模型差异", "效果、成本、延迟、上下文和工具调用能力"]
+          }
+        ]
+      },
+      {
+        "id": "part-02",
+        "title": "第二部分：和模型沟通：Prompt 与上下文工程",
+        "chapters": [
+          {
+            "id": "04-prompt-engineering",
+            "order": "04",
+            "title": "Prompt Engineering 基础",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["Prompt", "Few-shot", "输出格式"],
+            "source": "content/chapters/04-prompt-engineering.md",
+            "summary": ["System、User、Assistant 消息", "角色设定、任务描述、约束条件", "常见坏 Prompt 与改写方法"]
+          },
+          {
+            "id": "05-context-engineering",
+            "order": "05",
+            "title": "Context Engineering 上下文工程",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Context", "上下文", "Token"],
+            "source": "content/chapters/05-context-engineering.md",
+            "summary": ["Prompt 不只是提示词，而是上下文组织", "对话历史、用户画像、任务状态", "长上下文管理与摘要压缩"]
+          },
+          {
+            "id": "06-structured-output",
+            "order": "06",
+            "title": "结构化输出与可靠性",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["JSON", "Schema", "可靠性"],
+            "source": "content/chapters/06-structured-output.md",
+            "summary": ["JSON 与 JSON Schema", "输出校验、自动修复、重试策略", "可被程序消费的模型输出"]
+          }
+        ]
+      },
+      {
+        "id": "part-03",
+        "title": "第三部分：给模型知识：RAG 与记忆系统",
+        "chapters": [
+          {
+            "id": "07-rag-basics",
+            "order": "07",
+            "title": "RAG 基础",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["RAG", "Embedding", "向量数据库"],
+            "source": "content/chapters/07-rag-basics.md",
+            "summary": ["为什么需要 RAG", "文档加载、清洗、切分、Embedding、入库", "检索、重排、生成的完整流程"]
+          },
+          {
+            "id": "08-advanced-rag",
+            "order": "08",
+            "title": "RAG 进阶",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Hybrid Search", "Rerank", "Query Rewrite"],
+            "source": "content/chapters/08-advanced-rag.md",
+            "summary": ["Chunk 策略", "Hybrid Search 与多路召回", "RAG 效果评估"]
+          },
+          {
+            "id": "09-agent-memory",
+            "order": "09",
+            "title": "Agent 的记忆系统",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Memory", "Graph RAG", "长期记忆"],
+            "source": "content/chapters/09-agent-memory.md",
+            "summary": ["短期记忆与长期记忆", "语义记忆、情节记忆、结构化记忆", "记忆写入、更新、遗忘与隐私边界"]
+          }
+        ]
+      },
+      {
+        "id": "part-04",
+        "title": "第四部分：让模型行动：Function Call、Tool Use 与 MCP",
+        "chapters": [
+          {
+            "id": "10-function-calling",
+            "order": "10",
+            "title": "Function Calling",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["Function Call", "Tool Schema", "Java"],
+            "source": "content/chapters/10-function-calling.md",
+            "summary": ["Function Call 的本质", "Tool Schema 如何设计", "Java 后端如何封装工具接口"]
+          },
+          {
+            "id": "11-tool-use",
+            "order": "11",
+            "title": "Tool Use 工具调用系统",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Tools", "权限", "审计"],
+            "source": "content/chapters/11-tool-use.md",
+            "summary": ["搜索、数据库、文件、浏览器、代码执行工具", "工具权限与安全边界", "工具调用链路追踪"]
+          },
+          {
+            "id": "12-mcp",
+            "order": "12",
+            "title": "MCP：模型上下文协议",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["MCP", "Tools", "Resources"],
+            "source": "content/chapters/12-mcp.md",
+            "summary": ["MCP 解决什么问题", "MCP Server 与 MCP Client", "企业内部系统如何接入 Agent"]
+          },
+          {
+            "id": "13-skill-plugin",
+            "order": "13",
+            "title": "Skill、插件与能力包",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Skill", "Plugin", "能力封装"],
+            "source": "content/chapters/13-skill-plugin.md",
+            "summary": ["Skill 是一种能力封装模式", "Prompt + Tool + Workflow + Examples", "Skill、插件、MCP、Function Call 的区别"]
+          }
+        ]
+      },
+      {
+        "id": "part-05",
+        "title": "第五部分：Agent 核心架构",
+        "chapters": [
+          {
+            "id": "14-what-is-agent",
+            "order": "14",
+            "title": "什么是 AI Agent",
+            "level": "基础",
+            "status": "planned",
+            "tags": ["Agent", "Chatbot", "架构"],
+            "source": "content/chapters/14-what-is-agent.md",
+            "summary": ["Agent 与 Chatbot 的区别", "目标、记忆、工具、规划", "Agent 系统的最小架构"]
+          },
+          {
+            "id": "15-agent-planning",
+            "order": "15",
+            "title": "Agent Planning 任务规划",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Planning", "ReAct", "Reflection"],
+            "source": "content/chapters/15-agent-planning.md",
+            "summary": ["ReAct", "Plan-and-Execute", "Reflection 与 Self-Correction"]
+          },
+          {
+            "id": "16-agent-runtime",
+            "order": "16",
+            "title": "Agent Runtime 运行时",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Runtime", "Agent Loop", "状态机"],
+            "source": "content/chapters/16-agent-runtime.md",
+            "summary": ["Agent Loop", "Step、Thought、Action、Observation", "中断、恢复、重试、超时"]
+          },
+          {
+            "id": "17-multi-agent",
+            "order": "17",
+            "title": "Multi-Agent 多智能体",
+            "level": "进阶",
+            "status": "planned",
+            "tags": ["Multi-Agent", "Supervisor", "Worker"],
+            "source": "content/chapters/17-multi-agent.md",
+            "summary": ["多角色协作", "Supervisor / Worker 模式", "什么时候不该使用 Multi-Agent"]
+          }
+        ]
+      },
+      {
+        "id": "part-06",
+        "title": "第六部分：工程化与生产落地",
+        "chapters": [
+          {
+            "id": "18-agent-backend-architecture",
+            "order": "18",
+            "title": "AI Agent 后端架构",
+            "level": "工程",
+            "status": "planned",
+            "tags": ["Java", "Spring AI", "LangChain4j"],
+            "source": "content/chapters/18-agent-backend-architecture.md",
+            "summary": ["API 层、模型层、工具层、记忆层、任务层", "SSE / WebSocket 流式响应", "多租户与任务隔离"]
+          },
+          {
+            "id": "19-observability-evaluation",
+            "order": "19",
+            "title": "可观测性与评估",
+            "level": "工程",
+            "status": "planned",
+            "tags": ["Trace", "Eval", "Token"],
+            "source": "content/chapters/19-observability-evaluation.md",
+            "summary": ["日志、Trace、Token 统计", "Prompt 版本管理", "Agent 评测集"]
+          },
+          {
+            "id": "20-security-permission",
+            "order": "20",
+            "title": "安全与权限",
+            "level": "工程",
+            "status": "planned",
+            "tags": ["安全", "Prompt Injection", "权限"],
+            "source": "content/chapters/20-security-permission.md",
+            "summary": ["Prompt Injection 与 Tool Injection", "权限隔离", "审批与审计机制"]
+          },
+          {
+            "id": "21-performance-cost",
+            "order": "21",
+            "title": "性能与成本优化",
+            "level": "工程",
+            "status": "planned",
+            "tags": ["成本", "缓存", "模型路由"],
+            "source": "content/chapters/21-performance-cost.md",
+            "summary": ["模型选择与模型路由", "Prompt Cache 与 RAG Cache", "并发控制与降级策略"]
+          }
+        ]
+      },
+      {
+        "id": "part-07",
+        "title": "第七部分：实战项目",
+        "chapters": [
+          {
+            "id": "22-knowledge-base-agent",
+            "order": "22",
+            "title": "项目一：知识库问答 Agent",
+            "level": "实战",
+            "status": "planned",
+            "tags": ["项目", "RAG", "知识库"],
+            "source": "content/chapters/22-knowledge-base-agent.md",
+            "summary": ["文档上传", "RAG 问答", "引用来源与效果评估"]
+          },
+          {
+            "id": "23-enterprise-workflow-agent",
+            "order": "23",
+            "title": "项目二：企业工作流 Agent",
+            "level": "实战",
+            "status": "planned",
+            "tags": ["项目", "MCP", "审批流"],
+            "source": "content/chapters/23-enterprise-workflow-agent.md",
+            "summary": ["Function Call", "MCP 接入", "权限、审计与异常处理"]
+          },
+          {
+            "id": "24-research-agent",
+            "order": "24",
+            "title": "项目三：研究型 Agent",
+            "level": "实战",
+            "status": "planned",
+            "tags": ["项目", "搜索", "报告生成"],
+            "source": "content/chapters/24-research-agent.md",
+            "summary": ["搜索和网页阅读", "多轮规划", "资料整理与事实核查"]
+          },
+          {
+            "id": "25-coding-agent",
+            "order": "25",
+            "title": "项目四：代码开发 Agent",
+            "level": "实战",
+            "status": "planned",
+            "tags": ["项目", "代码", "工程协作"],
+            "source": "content/chapters/25-coding-agent.md",
+            "summary": ["代码阅读", "文件编辑与测试执行", "Review 与提交"]
+          }
+        ]
+      },
+      {
+        "id": "part-08",
+        "title": "第八部分：学习路线与职业发展",
+        "chapters": [
+          {
+            "id": "26-agent-engineer-skill-model",
+            "order": "26",
+            "title": "AI Agent 工程师能力模型",
+            "level": "路线",
+            "status": "planned",
+            "tags": ["能力模型", "职业发展", "学习路线"],
+            "source": "content/chapters/26-agent-engineer-skill-model.md",
+            "summary": ["模型理解能力", "Prompt / Context / RAG / Tool 能力", "后端工程与产品理解"]
+          },
+          {
+            "id": "27-java-to-agent-engineer",
+            "order": "27",
+            "title": "Java 工程师如何转 AI Agent",
+            "level": "路线",
+            "status": "planned",
+            "tags": ["Java", "转型", "作品集"],
+            "source": "content/chapters/27-java-to-agent-engineer.md",
+            "summary": ["Java 工程师的优势", "需要补齐的 AI 能力", "如何把现有项目改造成 Agent 项目"]
+          },
+          {
+            "id": "28-future-trends",
+            "order": "28",
+            "title": "未来趋势",
+            "level": "路线",
+            "status": "planned",
+            "tags": ["趋势", "Computer Use", "Agent Infra"],
+            "source": "content/chapters/28-future-trends.md",
+            "summary": ["Agentic Workflow", "Computer Use 与多模态 Agent", "Agent Infra 与 AI Infra 的交叉"]
+          }
+        ]
+      }
+    ]
+  }
