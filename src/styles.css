@@ -411,6 +411,37 @@ button {
   color: inherit;
 }
 
+.markdown-body table {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  margin: 24px 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.markdown-body th,
+.markdown-body td {
+  min-width: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+  color: #2f3a44;
+}
+
+.markdown-body th {
+  background: #ebe7dc;
+  color: var(--ink);
+  font-weight: 800;
+  text-align: left;
+}
+
+.markdown-body tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.45);
+}
+
 .empty-state {
   margin-top: 36px;
   padding: 34px;
