@@ -38,7 +38,7 @@
             "order": "02",
             "title": "LLM 的基本原理",
             "level": "基础",
-            "status": "planned",
+            "status": "draft",
             "tags": ["LLM", "Transformer", "Token"],
             "source": "content/chapters/02-llm-principles.md",
             "summary": ["Token、Embedding、Transformer、Attention", "预训练、微调、对齐", "幻觉、上下文窗口、概率输出的本质"]
