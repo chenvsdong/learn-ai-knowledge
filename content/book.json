@@ -48,7 +48,7 @@
             "order": "03",
             "title": "主流模型与能力边界",
             "level": "基础",
-            "status": "planned",
+            "status": "draft",
             "tags": ["模型选择", "多模态", "推理模型"],
             "source": "content/chapters/03-model-selection.md",
             "summary": ["Chat 模型、推理模型、多模态模型", "主流模型差异", "效果、成本、延迟、上下文和工具调用能力"]
