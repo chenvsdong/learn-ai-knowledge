@@ -74,7 +74,7 @@
             "order": "05",
             "title": "Context Engineering 上下文工程",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Context", "上下文", "Token"],
             "source": "content/chapters/05-context-engineering.md",
             "summary": ["Prompt 不只是提示词，而是上下文组织", "对话历史、用户画像、任务状态", "长上下文管理与摘要压缩"]
