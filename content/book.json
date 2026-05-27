@@ -64,7 +64,7 @@
             "order": "04",
             "title": "Prompt Engineering 基础",
             "level": "基础",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Prompt", "Few-shot", "输出格式"],
             "source": "content/chapters/04-prompt-engineering.md",
             "summary": ["System、User、Assistant 消息", "角色设定、任务描述、约束条件", "常见坏 Prompt 与改写方法"]
