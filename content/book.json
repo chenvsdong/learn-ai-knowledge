@@ -84,7 +84,7 @@
             "order": "06",
             "title": "结构化输出与可靠性",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["JSON", "Schema", "可靠性"],
             "source": "content/chapters/06-structured-output.md",
             "summary": ["JSON 与 JSON Schema", "输出校验、自动修复、重试策略", "可被程序消费的模型输出"]
