@@ -146,7 +146,7 @@
             "order": "11",
             "title": "Tool Use 工具调用系统",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Tools", "权限", "审计"],
             "source": "content/chapters/11-tool-use.md",
             "summary": ["搜索、数据库、文件、浏览器、代码执行工具", "工具权限与安全边界", "工具调用链路追踪"]
@@ -156,7 +156,7 @@
             "order": "12",
             "title": "MCP：模型上下文协议",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["MCP", "Tools", "Resources"],
             "source": "content/chapters/12-mcp.md",
             "summary": ["MCP 解决什么问题", "MCP Server 与 MCP Client", "企业内部系统如何接入 Agent"]
@@ -166,7 +166,7 @@
             "order": "13",
             "title": "Skill、插件与能力包",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Skill", "Plugin", "能力封装"],
             "source": "content/chapters/13-skill-plugin.md",
             "summary": ["Skill 是一种能力封装模式", "Prompt + Tool + Workflow + Examples", "Skill、插件、MCP、Function Call 的区别"]
@@ -182,7 +182,7 @@
             "order": "14",
             "title": "什么是 AI Agent",
             "level": "基础",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Agent", "Chatbot", "架构"],
             "source": "content/chapters/14-what-is-agent.md",
             "summary": ["Agent 与 Chatbot 的区别", "目标、记忆、工具、规划", "Agent 系统的最小架构"]
@@ -192,7 +192,7 @@
             "order": "15",
             "title": "Agent Planning 任务规划",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Planning", "ReAct", "Reflection"],
             "source": "content/chapters/15-agent-planning.md",
             "summary": ["ReAct", "Plan-and-Execute", "Reflection 与 Self-Correction"]
@@ -202,7 +202,7 @@
             "order": "16",
             "title": "Agent Runtime 运行时",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Runtime", "Agent Loop", "状态机"],
             "source": "content/chapters/16-agent-runtime.md",
             "summary": ["Agent Loop", "Step、Thought、Action、Observation", "中断、恢复、重试、超时"]
@@ -212,7 +212,7 @@
             "order": "17",
             "title": "Multi-Agent 多智能体",
             "level": "进阶",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Multi-Agent", "Supervisor", "Worker"],
             "source": "content/chapters/17-multi-agent.md",
             "summary": ["多角色协作", "Supervisor / Worker 模式", "什么时候不该使用 Multi-Agent"]
