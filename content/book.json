@@ -136,7 +136,7 @@
             "order": "10",
             "title": "Function Calling",
             "level": "基础",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Function Call", "Tool Schema", "Java"],
             "source": "content/chapters/10-function-calling.md",
             "summary": ["Function Call 的本质", "Tool Schema 如何设计", "Java 后端如何封装工具接口"]
