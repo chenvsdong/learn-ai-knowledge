@@ -1131,21 +1131,21 @@ Context Engineering 是把模型输入从“长文本拼接”推进到“上下
 
 ## Sources
 
-以下来源按 2026-05-28 访问时的官方文档理解；具体 API、类名和参数以后续官方文档和项目依赖版本为准。
+以下来源按 2026-05-29 访问时的官方文档理解；具体 API、类名和参数以后续官方文档和项目依赖版本为准。
 
 - [OpenAI API Reference: Responses](https://platform.openai.com/docs/api-reference/responses)
-- [OpenAI API Guide: Conversation state](https://platform.openai.com/docs/guides/conversation-state)
-- [OpenAI Prompt Caching](https://platform.openai.com/docs/guides/prompt-caching)
+- [OpenAI API Guide: Conversation state](https://developers.openai.com/api/docs/guides/conversation-state)
+- [OpenAI Prompt Caching](https://developers.openai.com/api/docs/guides/prompt-caching)
 - [Spring AI Chat Memory](https://docs.spring.io/spring-ai/reference/api/chat-memory.html)
 - [Spring AI Advisors API](https://docs.spring.io/spring-ai/reference/api/advisors.html)
-- [LangChain4j Chat Memory tutorial](https://docs.langchain4j.dev/tutorials/chat-memory)
+- [LangChain4j Chat Memory tutorial](https://docs.langchain4j.dev/tutorials/chat-memory/)
 - [LangChain4j AI Services API](https://docs.langchain4j.dev/apidocs/dev/langchain4j/service/AiServices.html)
 - [Model Context Protocol: Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
 - [Model Context Protocol: Resources](https://modelcontextprotocol.io/specification/2025-11-25/server/resources)
 - [Model Context Protocol: Prompts](https://modelcontextprotocol.io/specification/2025-11-25/server/prompts)
-- [Anthropic Claude Code: Manage Claude's memory](https://docs.anthropic.com/en/docs/claude-code/memory)
-- [Anthropic Claude Code: Settings](https://docs.anthropic.com/en/docs/claude-code/settings)
-- [Anthropic Claude Code: Hooks reference](https://docs.anthropic.com/en/docs/claude-code/hooks)
+- [Anthropic Claude Code: Manage Claude's memory](https://code.claude.com/docs/en/memory)
+- [Anthropic Claude Code: Settings](https://code.claude.com/docs/en/settings)
+- [Anthropic Claude Code: Hooks reference](https://code.claude.com/docs/en/hooks)
 
 ## 写作审查记录
 

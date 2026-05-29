@@ -1233,18 +1233,18 @@ JSON Mode 通常解决合法 JSON，不等于符合业务字段契约。
 
 ## Sources
 
-以下来源按 2026-05-28 访问时的官方文档理解；OpenAI Structured Outputs、MCP schema、Spring AI 和 LangChain4j 的具体支持范围以后续官方文档和项目依赖版本为准。
+以下来源按 2026-05-29 访问时的官方文档理解；OpenAI Structured Outputs、MCP schema、Spring AI 和 LangChain4j 的具体支持范围以后续官方文档和项目依赖版本为准。
 
-- [OpenAI Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
+- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
 - [OpenAI API Reference: Responses](https://platform.openai.com/docs/api-reference/responses)
 - [Spring AI Structured Output](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html)
-- [LangChain4j Structured Outputs](https://docs.langchain4j.dev/tutorials/structured-outputs)
+- [LangChain4j Structured Outputs](https://docs.langchain4j.dev/tutorials/structured-outputs/)
 - [LangChain4j AI Services API](https://docs.langchain4j.dev/apidocs/dev/langchain4j/service/AiServices.html)
 - [Model Context Protocol: Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
 - [Model Context Protocol: Schema Reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)
-- [Anthropic Claude Code: CLI reference](https://docs.anthropic.com/en/docs/claude-code/cli-usage)
-- [Anthropic Claude Code: Hooks reference](https://docs.anthropic.com/en/docs/claude-code/hooks)
-- [Anthropic Claude Code: Subagents](https://docs.anthropic.com/en/docs/claude-code/sub-agents)
+- [Anthropic Claude Code: CLI reference](https://code.claude.com/docs/en/cli-usage)
+- [Anthropic Claude Code: Hooks reference](https://code.claude.com/docs/en/hooks)
+- [Anthropic Claude Code: Subagents](https://code.claude.com/docs/en/sub-agents)
 
 ## 写作审查记录
 

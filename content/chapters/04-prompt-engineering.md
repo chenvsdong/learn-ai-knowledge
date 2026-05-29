@@ -887,18 +887,18 @@ System、User、Assistant 等消息角色可以帮助我们区分应用规则、
 
 ## Sources
 
-以下来源按 2026-05-28 访问时的官方文档理解；具体 API、CLI 和配置项以后续官方文档和项目依赖版本为准。
+以下来源按 2026-05-29 访问时的官方文档理解；具体 API、CLI 和配置项以后续官方文档和项目依赖版本为准。
 
 - [OpenAI API Reference: Responses](https://platform.openai.com/docs/api-reference/responses)
-- [OpenAI Prompt Engineering guide](https://platform.openai.com/docs/guides/prompt-engineering)
+- [OpenAI Prompt Engineering guide](https://developers.openai.com/api/docs/guides/prompt-engineering)
 - [Spring AI Prompt Templates](https://docs.spring.io/spring-ai/reference/api/prompt.html)
-- [LangChain4j AI Services](https://docs.langchain4j.dev/tutorials/ai-services)
+- [LangChain4j AI Services](https://docs.langchain4j.dev/tutorials/ai-services/)
 - [Model Context Protocol: Prompts](https://modelcontextprotocol.io/specification/2025-11-25/server/prompts)
 - [Model Context Protocol: Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
-- [Anthropic Claude Code: Manage Claude's memory](https://docs.anthropic.com/en/docs/claude-code/memory)
-- [Anthropic Claude Code: Settings](https://docs.anthropic.com/en/docs/claude-code/settings)
-- [Anthropic Claude Code: Hooks reference](https://docs.anthropic.com/en/docs/claude-code/hooks)
-- [Anthropic Claude Code: Subagents](https://docs.anthropic.com/en/docs/claude-code/sub-agents)
+- [Anthropic Claude Code: Manage Claude's memory](https://code.claude.com/docs/en/memory)
+- [Anthropic Claude Code: Settings](https://code.claude.com/docs/en/settings)
+- [Anthropic Claude Code: Hooks reference](https://code.claude.com/docs/en/hooks)
+- [Anthropic Claude Code: Subagents](https://code.claude.com/docs/en/sub-agents)
 - [OWASP Top 10 for LLM Applications 2025](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 
 ## 写作审查记录

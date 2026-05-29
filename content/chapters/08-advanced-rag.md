@@ -616,6 +616,8 @@ Chunk 策略决定材料能否被正确找到；Query Rewrite 和 Query Expansio
 
 ## Sources
 
+以下来源按 2026-05-29 访问时的论文页面理解；高级 RAG 术语和方法以后续论文、框架文档和项目依赖版本为准。
+
 - [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)
 - [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/abs/2212.10496)
 

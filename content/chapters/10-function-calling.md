@@ -1468,10 +1468,10 @@ Function Calling 是模型从“回答”走向“行动”的第一道工程接
 
 以下来源按 2026-05-29 访问时的官方文档理解；OpenAI API、SDK、strict mode、工具事件和 schema 支持范围以后续官方文档和项目依赖版本为准。
 
-- [OpenAI API: Function calling](https://platform.openai.com/docs/guides/function-calling)
-- [OpenAI API: Using tools](https://platform.openai.com/docs/guides/tools)
-- [OpenAI API: Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
-- [OpenAI API: Migrate to the Responses API](https://platform.openai.com/docs/guides/migrate-to-responses)
+- [OpenAI API: Function calling](https://developers.openai.com/api/docs/guides/function-calling)
+- [OpenAI API: Using tools](https://developers.openai.com/api/docs/guides/tools)
+- [OpenAI API: Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [OpenAI API: Migrate to the Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses)
 - [OpenAI Java SDK](https://github.com/openai/openai-java)
 - [JSON Schema: Getting Started](https://json-schema.org/learn/getting-started-step-by-step)
 

@@ -19,6 +19,31 @@ marked.use({
   breaks: false,
 });
 
+function renderMarkdown(markdown) {
+  const html = marked.parse(markdown ?? '');
+  const template = document.createElement('template');
+  template.innerHTML = html;
+
+  template.content.querySelectorAll('a[href]').forEach((link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    let url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch {
+      return;
+    }
+
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  return template.innerHTML;
+}
+
 const statusText = {
   draft: '已起草',
   planned: '待扩写',
@@ -83,7 +108,7 @@ function App() {
 
   const renderedHtml = useMemo(() => {
     if (!activeChapter?.hasContent) return '';
-    return marked.parse(activeChapter.markdown ?? '');
+    return renderMarkdown(activeChapter.markdown);
   }, [activeChapter]);
 
   const filteredParts = useMemo(() => {
