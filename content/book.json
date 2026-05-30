@@ -228,7 +228,7 @@
             "order": "18",
             "title": "Agent Harness Engineering：从 Demo 到生产的可靠性工程",
             "level": "工程",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Harness Engineering", "可靠性", "Agent Infra"],
             "source": "content/chapters/18-agent-harness-engineering.md",
             "summary": ["围绕 Agent 的工程护栏", "上下文、工具、权限、状态、评估和反馈闭环", "让 Agent 从 Demo 走向可治理的生产系统"]
@@ -238,7 +238,7 @@
             "order": "19",
             "title": "AI Agent 后端架构",
             "level": "工程",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Java", "Spring AI", "LangChain4j"],
             "source": "content/chapters/19-agent-backend-architecture.md",
             "summary": ["API 层、模型层、工具层、记忆层、任务层", "SSE / WebSocket 流式响应", "多租户与任务隔离"]
@@ -248,7 +248,7 @@
             "order": "20",
             "title": "可观测性与评估",
             "level": "工程",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Trace", "Eval", "Token"],
             "source": "content/chapters/20-observability-evaluation.md",
             "summary": ["日志、Trace、Token 统计", "Prompt 版本管理", "Agent 评测集"]
@@ -258,7 +258,7 @@
             "order": "21",
             "title": "安全与权限",
             "level": "工程",
-            "status": "planned",
+            "status": "draft",
             "tags": ["安全", "Prompt Injection", "权限"],
             "source": "content/chapters/21-security-permission.md",
             "summary": ["Prompt Injection 与 Tool Injection", "权限隔离", "审批与审计机制"]
@@ -268,7 +268,7 @@
             "order": "22",
             "title": "性能与成本优化",
             "level": "工程",
-            "status": "planned",
+            "status": "draft",
             "tags": ["成本", "缓存", "模型路由"],
             "source": "content/chapters/22-performance-cost.md",
             "summary": ["模型选择与模型路由", "Prompt Cache 与 RAG Cache", "并发控制与降级策略"]
@@ -284,7 +284,7 @@
             "order": "23",
             "title": "项目一：知识库问答 Agent",
             "level": "实战",
-            "status": "planned",
+            "status": "draft",
             "tags": ["项目", "RAG", "知识库"],
             "source": "content/chapters/23-knowledge-base-agent.md",
             "summary": ["文档上传", "RAG 问答", "引用来源与效果评估"]
@@ -294,7 +294,7 @@
             "order": "24",
             "title": "项目二：企业工作流 Agent",
             "level": "实战",
-            "status": "planned",
+            "status": "draft",
             "tags": ["项目", "MCP", "审批流"],
             "source": "content/chapters/24-enterprise-workflow-agent.md",
             "summary": ["Function Call", "MCP 接入", "权限、审计与异常处理"]
@@ -304,7 +304,7 @@
             "order": "25",
             "title": "项目三：研究型 Agent",
             "level": "实战",
-            "status": "planned",
+            "status": "draft",
             "tags": ["项目", "搜索", "报告生成"],
             "source": "content/chapters/25-research-agent.md",
             "summary": ["搜索和网页阅读", "多轮规划", "资料整理与事实核查"]
@@ -314,7 +314,7 @@
             "order": "26",
             "title": "项目四：代码开发 Agent",
             "level": "实战",
-            "status": "planned",
+            "status": "draft",
             "tags": ["项目", "代码", "工程协作"],
             "source": "content/chapters/26-coding-agent.md",
             "summary": ["代码阅读", "文件编辑与测试执行", "Review 与提交"]
@@ -330,7 +330,7 @@
             "order": "27",
             "title": "AI Agent 工程师能力模型",
             "level": "路线",
-            "status": "planned",
+            "status": "draft",
             "tags": ["能力模型", "职业发展", "学习路线"],
             "source": "content/chapters/27-agent-engineer-skill-model.md",
             "summary": ["模型理解能力", "Prompt / Context / RAG / Tool 能力", "后端工程与产品理解"]
@@ -340,7 +340,7 @@
             "order": "28",
             "title": "Java 工程师如何转 AI Agent",
             "level": "路线",
-            "status": "planned",
+            "status": "draft",
             "tags": ["Java", "转型", "作品集"],
             "source": "content/chapters/28-java-to-agent-engineer.md",
             "summary": ["Java 工程师的优势", "需要补齐的 AI 能力", "如何把现有项目改造成 Agent 项目"]
@@ -350,10 +350,26 @@
             "order": "29",
             "title": "未来趋势",
             "level": "路线",
-            "status": "planned",
+            "status": "draft",
             "tags": ["趋势", "Computer Use", "Agent Infra"],
             "source": "content/chapters/29-future-trends.md",
             "summary": ["Agentic Workflow", "Computer Use 与多模态 Agent", "Agent Infra 与 AI Infra 的交叉"]
+          }
+        ]
+      },
+      {
+        "id": "part-09",
+        "title": "第九部分：附录与模板",
+        "chapters": [
+          {
+            "id": "30-glossary-concept-index",
+            "order": "30",
+            "title": "术语表与概念索引",
+            "level": "附录",
+            "status": "draft",
+            "tags": ["术语表", "概念索引", "附录"],
+            "source": "content/chapters/30-glossary-concept-index.md",
+            "summary": ["统一 AI Agent 核心术语", "区分易混淆概念", "把术语映射到工程层级和责任边界"]
           }
         ]
       }
