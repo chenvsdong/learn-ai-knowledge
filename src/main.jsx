@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { marked } from 'marked';
 import {
@@ -56,6 +56,24 @@ const statusClass = {
   published: 'status-published',
 };
 
+const readingMemoryKey = 'learn-ai-knowledge:reading-memory:v1';
+
+function readReadingMemory() {
+  try {
+    return JSON.parse(window.localStorage.getItem(readingMemoryKey) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function writeReadingMemory(nextMemory) {
+  try {
+    window.localStorage.setItem(readingMemoryKey, JSON.stringify(nextMemory));
+  } catch {
+    // Reading memory is a convenience feature; ignore storage failures.
+  }
+}
+
 function flattenChapters(parts) {
   return parts.flatMap((part) =>
     (part.chapters ?? []).map((chapter) => ({
@@ -69,6 +87,8 @@ function flattenChapters(parts) {
 function getInitialChapterId(chapters) {
   const hashId = decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
   if (chapters.some((chapter) => chapter.id === hashId)) return hashId;
+  const rememberedId = readReadingMemory().chapterId;
+  if (chapters.some((chapter) => chapter.id === rememberedId)) return rememberedId;
   if (chapters.some((chapter) => chapter.id === bookData.start)) return bookData.start;
   return chapters[0]?.id;
 }
@@ -83,6 +103,8 @@ function App() {
   const [activeId, setActiveId] = useState(() => getInitialChapterId(navChapters));
   const [query, setQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const hasRestoredReadingPosition = useRef(false);
+  const shouldScrollToTop = useRef(false);
 
   const activeIndex = navChapters.findIndex((chapter) => chapter.id === activeId);
   const navChapter = navChapters[activeIndex] ?? navChapters[0];
@@ -90,10 +112,18 @@ function App() {
   const previousChapter = activeIndex > 0 ? navChapters[activeIndex - 1] : null;
   const nextChapter = activeIndex >= 0 && activeIndex < navChapters.length - 1 ? navChapters[activeIndex + 1] : null;
 
+  const renderedHtml = useMemo(() => {
+    if (!activeChapter?.hasContent) return '';
+    return renderMarkdown(activeChapter.markdown);
+  }, [activeChapter]);
+
   useEffect(() => {
     const onHashChange = () => {
       const hashId = decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
-      if (navChapters.some((chapter) => chapter.id === hashId)) setActiveId(hashId);
+      if (navChapters.some((chapter) => chapter.id === hashId)) {
+        shouldScrollToTop.current = false;
+        setActiveId(hashId);
+      }
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -103,13 +133,82 @@ function App() {
     if (!activeId) return;
     const nextHash = `#/${encodeURIComponent(activeId)}`;
     if (window.location.hash !== nextHash) window.history.replaceState(null, '', nextHash);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const memory = readReadingMemory();
+    writeReadingMemory({
+      ...memory,
+      chapterId: activeId,
+      positions: {
+        ...(memory.positions ?? {}),
+        [activeId]: shouldScrollToTop.current ? 0 : memory.positions?.[activeId] ?? 0,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (shouldScrollToTop.current) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      shouldScrollToTop.current = false;
+    }
   }, [activeId]);
 
-  const renderedHtml = useMemo(() => {
-    if (!activeChapter?.hasContent) return '';
-    return renderMarkdown(activeChapter.markdown);
-  }, [activeChapter]);
+  useEffect(() => {
+    if (!activeId || hasRestoredReadingPosition.current) return;
+    hasRestoredReadingPosition.current = true;
+
+    const savedPosition = readReadingMemory().positions?.[activeId] ?? 0;
+    if (!savedPosition) return;
+
+    const restorePosition = () => {
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: Math.min(savedPosition, maxScroll), behavior: 'auto' });
+    };
+
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(restorePosition);
+    });
+
+    return () => window.cancelAnimationFrame(firstFrame);
+  }, [activeId, renderedHtml]);
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const persistReadingPosition = () => {
+      const memory = readReadingMemory();
+      writeReadingMemory({
+        ...memory,
+        chapterId: activeId,
+        positions: {
+          ...(memory.positions ?? {}),
+          [activeId]: window.scrollY,
+        },
+        updatedAt: new Date().toISOString(),
+      });
+    };
+
+    const saveReadingPosition = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        persistReadingPosition();
+      });
+    };
+
+    const saveBeforeUnload = () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
+      persistReadingPosition();
+    };
+
+    window.addEventListener('scroll', saveReadingPosition, { passive: true });
+    window.addEventListener('beforeunload', saveBeforeUnload);
+    return () => {
+      window.removeEventListener('scroll', saveReadingPosition);
+      window.removeEventListener('beforeunload', saveBeforeUnload);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, [activeId]);
 
   const filteredParts = useMemo(() => {
     const needle = normalizeText(query.trim());
@@ -141,6 +240,7 @@ function App() {
   const progress = navChapters.length ? Math.round((completedCount / navChapters.length) * 100) : 0;
 
   function selectChapter(id) {
+    shouldScrollToTop.current = true;
     setActiveId(id);
     setSidebarOpen(false);
   }
