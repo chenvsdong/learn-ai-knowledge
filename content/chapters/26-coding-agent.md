@@ -279,6 +279,105 @@ Agent 不应该随意还原不属于自己的改动。即使测试失败，也�
 - 原始输出脱敏。
 - 运行前记录 command policy，运行后记录 exit code。
 
+### Coding Agent 的沙箱 Profile
+
+代码开发 Agent 的沙箱要比普通问答 Agent 更严格，因为它会同时接触代码、文件系统、依赖、测试命令和 git 状态。一个合理的做法是按任务风险定义 profile，而不是给所有任务同一套权限。
+
+| Profile | 允许动作 | 默认网络 | 适合场景 |
+| --- | --- | --- | --- |
+| `repo_readonly` | 读文件、搜索、看 diff、看 git status | 关闭 | 理解项目、做 review、定位问题 |
+| `workspace_patch` | 读文件、写受控目录、生成 patch | 关闭 | 小范围代码修改、文档修改 |
+| `test_container` | 写工作区、运行测试和构建 | allowlist | 运行 `npm test`、`mvn test`、`npm run build` |
+| `dependency_update` | 修改依赖、访问包仓库 | allowlist + approval | 升级依赖、生成 lockfile |
+| `release_ops` | 发布、部署、迁移 | 禁止默认自动执行 | 默认只生成计划，必须人工审批 |
+
+这些 profile 的重点是：从只读到写入再到执行命令，权限逐级扩大；每次扩大都要有可见理由和记录。
+
+一个 `test_container` profile 可以这样建模：
+
+```json
+{
+  "coding_sandbox_profile": {
+    "name": "test_container",
+    "repo_ref": "repo:kb-assistant",
+    "base_commit": "git_sha_before_agent",
+    "filesystem": {
+      "read_roots": ["./"],
+      "write_roots": ["src/", "tests/", "tmp/"],
+      "protected_paths": [".env", ".ssh/", "secrets/", "deploy/"],
+      "canonical_path_check": true,
+      "deny_symlink_escape": true,
+      "deny_hardlink_to_protected_path": true,
+      "mount_read_only_by_default": true
+    },
+    "network": {
+      "default": "deny",
+      "allowed_hosts": ["registry.npmjs.org", "repo.maven.apache.org"]
+    },
+    "dependency_policy": {
+      "lockfile_required": true,
+      "frozen_install": true,
+      "offline_cache_preferred": true,
+      "package_registry_allowlist": ["registry.npmjs.org", "repo.maven.apache.org"],
+      "dependency_change_requires_approval": true,
+      "postinstall_policy": "disabled_or_requires_approval",
+      "package_script_expansion_recorded": true
+    },
+    "environment": {
+      "allowed_env_vars": ["CI", "NODE_ENV", "MAVEN_OPTS"],
+      "blocked_env_patterns": ["*_TOKEN", "*_SECRET", "*_PASSWORD"]
+    },
+    "commands": {
+      "allowed": [
+        {
+          "command": "npm test",
+          "requires_lockfile": true,
+          "script_expansion_recorded": true,
+          "network": "deny_unless_package_cache_miss_approved"
+        },
+        {
+          "command": "npm run build",
+          "requires_lockfile": true,
+          "script_expansion_recorded": true,
+          "network": "deny_unless_package_cache_miss_approved"
+        },
+        {
+          "command": "mvn test",
+          "requires_lockfile_or_pinned_dependencies": true,
+          "effective_pom_recorded": true,
+          "network": "allowlist_only"
+        }
+      ],
+      "requires_approval": ["npm install", "mvn versions:set"],
+      "forbidden": ["git reset --hard", "rm -rf", "kubectl apply"]
+    },
+    "limits": {
+      "timeout_policy": "test_command_timeout",
+      "max_output_ref": "command_output_policy",
+      "cpu_memory_policy": "bounded"
+    },
+    "trace": {
+      "record_command": true,
+      "record_exit_code": true,
+      "record_output_ref": true,
+      "redact_secrets": true
+    }
+  }
+}
+```
+
+这不是某个 coding agent 产品的配置格式，而是你在设计平台时应该表达清楚的安全契约。
+
+这里的 `allowed` 不是简单命令字符串白名单。对 `npm test` 这类命令，平台还要展开并记录实际 package script，确认 lockfile 存在，优先使用离线依赖缓存，限制 package registry，禁用或审批 `postinstall` 等 lifecycle 脚本。对 Maven / Gradle 这类构建，也要记录 effective dependency 配置，限制仓库来源，并把依赖变化视为需要审批的代码变更。
+
+沙箱还要和 Worktree Guard 配合：
+
+- 运行测试前确认 patch 没覆盖用户改动。
+- 运行命令前确认工作区没有未声明的敏感文件变更。
+- 命令执行后记录新增、删除和修改的文件。
+- 如果命令生成大文件或 lockfile，要让 Diff Inspector 判断是否属于预期。
+- 如果测试命令实际访问了网络，要记录访问目标并进入安全 review。
+
 ### 原理五：测试失败不是结束，是观察
 
 测试失败时，Agent 要判断：
@@ -1189,10 +1288,12 @@ Release Gate 示例：
 
 ## Sources
 
-以下来源按 2026-05-30 访问时理解；coding agent 产品、CLI、权限和集成能力会变化，本章采用工程抽象，不写死某个产品命令或能力边界。
+以下来源中，原有 coding agent、Git 和 GitHub 来源按 2026-05-30 访问时理解；本次补充的沙箱和安全来源按 2026-06-01 访问时理解。coding agent 产品、CLI、权限、沙箱和集成能力会变化，本章采用工程抽象，不写死某个产品命令或能力边界。
 
 - [OpenAI Codex: CLI](https://developers.openai.com/codex/cli)
+- [OpenAI: Running Codex safely at OpenAI](https://openai.com/index/running-codex-safely/)
 - [OpenAI Agents SDK: Tools](https://openai.github.io/openai-agents-python/tools/)
+- [Claude Code Docs: Sandboxing](https://code.claude.com/docs/en/sandboxing)
 - [Git: git-status documentation](https://git-scm.com/docs/git-status)
 - [Git: git-diff documentation](https://git-scm.com/docs/git-diff)
 - [GitHub Docs: About pull request reviews](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews)
@@ -1203,25 +1304,25 @@ Release Gate 示例：
 ### 章节架构师
 
 - 本章目标：把 Agent 从研究报告推进到真实代码库中的代码变更治理。
-- 知识点地图：Repo Context、Worktree Guard、Plan、Patch、Command Runner、Test Analyzer、Diff Inspector、Review Agent、Commit / PR Assistant、secret scanning、Trace 和 Eval。
+- 知识点地图：Repo Context、Worktree Guard、Plan、Patch、Command Runner、Coding Sandbox Profile、Test Analyzer、Diff Inspector、Review Agent、Commit / PR Assistant、secret scanning、Trace 和 Eval。
 - 前后章节关系：承接第 25 章开放信息治理，进入第 27 章能力模型前，完成第四个实战项目。
 
 ### 技术审稿人
 
 - 发现问题：代码开发 Agent 容易被写成某个产品的使用说明，或把生成代码等同于完成工程任务。
-- 修订动作：引用 OpenAI Codex、OpenAI Agents SDK Tools、Git status / diff、GitHub PR reviews 和 Actions 官方文档；明确本章采用工程抽象，不写死产品命令，不把代码生成写成完整开发流程。
+- 修订动作：引用 OpenAI Codex、OpenAI Codex 安全文章、Claude Code Sandboxing、OpenAI Agents SDK Tools、Git status / diff、GitHub PR reviews 和 Actions 官方文档；明确本章采用工程抽象，不写死产品命令，不把代码生成写成完整开发流程。
 - 结论：章节没有把某个 coding agent 产品写成唯一标准。
 
 ### 工程审稿人
 
 - 发现问题：如果只讲写代码，会缺少命令沙箱、文件级工作区保护、patch 审计、测试旧失败基线、review 标准、secret 扫描、提交授权和回滚。
-- 修订动作：补充 Task Intake、Repo Context、Worktree Guard 的 base/current blob hash 和 overlap 检查、Plan、PatchRecord 的 diff_ref / pre-post hash / rollback_patch_ref、CommandRun 的 sandbox / env / network / exit code、TestAnalysis 的 baseline / flaky / environment 处理、DiffInspection、SelfReview 的 line / hunk / category / blocking 字段、PR 描述、Trace 可回放字段和复杂仓库 Eval。
+- 修订动作：补充 Task Intake、Repo Context、Worktree Guard 的 base/current blob hash 和 overlap 检查、Plan、PatchRecord 的 diff_ref / pre-post hash / rollback_patch_ref、CommandRun 的 sandbox / env / network / exit code、Coding Agent 分级 sandbox profile、TestAnalysis 的 baseline / flaky / environment 处理、DiffInspection、SelfReview 的 line / hunk / category / blocking 字段、PR 描述、Trace 可回放字段和复杂仓库 Eval。
 - 结论：章节能映射到真实代码协作系统，覆盖读取、编辑、验证、审查、提交边界和安全治理。
 
 ### 学习体验审稿人
 
 - 发现问题：读者容易把代码开发 Agent 理解为“让模型生成代码片段”。
-- 修订动作：沿用 kb-assistant citation checker 的改动案例，展示从需求到可 review diff 的完整链路。
+- 修订动作：沿用 kb-assistant citation checker 的改动案例，展示从需求到可 review diff 的完整链路；补充 coding agent 运行测试和构建时为什么需要分级沙箱。
 - 结论：章节能帮助读者从代码生成走向工程协作型 coding agent。
 
 ### 主编

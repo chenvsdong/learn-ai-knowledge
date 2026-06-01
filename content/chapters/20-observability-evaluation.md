@@ -41,6 +41,7 @@ Agent 系统还多了很多新的失败模式：
 - Token 和成本如何归集？
 - Prompt 版本如何参与评估和回滚？
 - Eval 数据集如何设计？
+- 常用公开 benchmark 应该如何作为选型参考？
 - Trace grading 和最终答案评估有什么区别？
 - 如何把线上反馈转成可复用评估样本？
 - 如何避免可观测性本身泄露敏感信息？
@@ -555,6 +556,109 @@ Eval case 应该结构化：
 
 Eval dataset 要有版本，case 要有来源、风险等级和脱敏状态。
 
+### 常用公开 Benchmark 怎么看
+
+公开 benchmark 的价值是帮助你快速理解模型或 Agent 在某类公开任务上的大致能力，但它不能替代自己的业务 eval。尤其是 Agent 系统，公开 benchmark 往往测的是“通用能力的一部分”，而生产系统关心的是“在你的工具、权限、数据、流程和失败模式里是否可靠”。
+
+常见 benchmark 可以这样理解：
+
+| Benchmark | 主要看什么 | 适合参考 | 不适合替代 |
+| --- | --- | --- | --- |
+| GAIA | 通用助手在真实问题中的推理、多模态、网页浏览和工具使用 | 判断模型是否具备综合助手潜力 | 不能证明企业内部流程、权限和数据治理可靠 |
+| AgentBench | LLM 作为 Agent 在多个交互环境中的推理和决策 | 比较不同模型在多环境交互任务上的基础能力 | 不能覆盖你的业务工具、审批和上下文污染风险 |
+| τ-bench | 多轮用户对话、领域 policy、API 工具调用和最终状态 | 评估客服 / 业务流程 Agent 的工具使用和规则遵守 | 不能直接代表你的业务 policy、工具 schema 和用户行为 |
+| SWE-bench | 根据真实 GitHub issue 修改代码并通过测试 | 评估 coding agent 的代码理解、补丁生成和测试修复能力 | 不能证明它能安全处理你的仓库、权限、secret 和发布流程 |
+| OSWorld | 在真实 OS / GUI 环境中完成桌面和网页任务 | 评估 Computer Use / GUI agent 的操作能力 | 不能替代浏览器沙箱、登录态隔离、人工确认和业务副作用控制 |
+| Terminal-Bench | 在终端环境完成系统、开发、数据处理等任务 | 评估终端型 Agent 的命令执行和长任务能力 | 不能替代内部命令 allowlist、沙箱和凭证隔离 |
+这张表不是排名，也不是推荐清单。它的作用是帮助你知道：一个 benchmark 的分数回答了什么问题，又没有回答什么问题。
+
+### Public Benchmark 不能替代内部 Eval
+
+使用公开 benchmark 时，至少要记住四个边界：
+
+1. 任务分布不同。
+
+   GAIA、SWE-bench、OSWorld 这类 benchmark 的任务来自公开环境或研究设定。它们不等于 `kb-assistant` 的上线检查、权限过滤、citation checker 和安全评审流程。
+
+2. Harness 不同。
+
+   同一个模型在不同 prompt、工具、浏览器、终端、沙箱、重试和最大步骤数下表现会不同。benchmark 分数通常包含模型和运行框架的共同效果。
+
+3. 指标不同。
+
+   公开 benchmark 常看成功率或 pass rate；生产系统还要看成本、延迟、未知处理、审批等待、权限拒绝、人工修正率和事故复盘。
+
+4. 风险不同。
+
+   公开 benchmark 通常不会覆盖你的内部 secret、租户隔离、审批责任、审计留存和合规要求。
+
+因此，公开 benchmark 更适合回答：
+
+```text
+这个模型 / Agent 方向有没有值得试点的能力？
+```
+
+而内部 eval 必须回答：
+
+```text
+它在我们的业务系统里是否可以上线？
+```
+
+### Benchmark 选型记录
+
+团队可以把公开 benchmark 作为模型或 Agent 选型记录的一部分，但要写清楚边界：
+
+```json
+{
+  "benchmark_reference": {
+    "model_profile": "reasoning_tool_use_candidate",
+    "public_benchmarks_considered": [
+      {
+        "name": "GAIA",
+        "benchmark_version": "paper_or_leaderboard_snapshot_2026_06_01",
+        "harness_version": "not_reproduced_internal_reference_only",
+        "accessed_at": "2026-06-01",
+        "leaderboard_or_paper_url": "https://ai.meta.com/research/publications/gaia-a-benchmark-for-general-ai-assistants/",
+        "task_subset": "general_assistant",
+        "run_config_summary": "referenced_public_result_not_internal_run",
+        "used_for": "general_assistant_tool_use_signal",
+        "not_used_for": "release_readiness_policy_gate"
+      },
+      {
+        "name": "SWE-bench",
+        "benchmark_version": "repo_snapshot_2026_06_01",
+        "harness_version": "not_reproduced_internal_reference_only",
+        "accessed_at": "2026-06-01",
+        "leaderboard_or_paper_url": "https://github.com/swe-bench/SWE-bench",
+        "task_subset": "software_issue_resolution",
+        "run_config_summary": "referenced_public_result_not_internal_run",
+        "used_for": "coding_agent_patch_signal",
+        "not_used_for": "repo_specific_security_review"
+      },
+      {
+        "name": "OSWorld",
+        "benchmark_version": "paper_snapshot_2026_06_01",
+        "harness_version": "not_reproduced_internal_reference_only",
+        "accessed_at": "2026-06-01",
+        "leaderboard_or_paper_url": "https://arxiv.org/abs/2404.07972",
+        "task_subset": "gui_computer_use",
+        "run_config_summary": "referenced_public_result_not_internal_run",
+        "used_for": "computer_use_capability_signal",
+        "not_used_for": "production_ui_action_approval"
+      }
+    ],
+    "required_internal_eval_suites": [
+      "kb_assistant_rag_core",
+      "kb_assistant_security",
+      "release_readiness_trace_eval"
+    ],
+    "decision": "pilot_only_until_internal_eval_passes"
+  }
+}
+```
+
+这类记录能防止团队把“榜单好看”直接翻译成“可以上线”。
+
 ### Grader 设计
 
 不同评估项使用不同 grader：
@@ -983,7 +1087,7 @@ Trace 写入不能阻塞主链路太久。常见做法：
 
 ## Sources
 
-以下来源按 2026-05-30 访问时理解；不同平台对 trace、eval、dataset、grader 的命名不同，本章采用工程抽象，不将任何产品 API 写成统一标准。
+以下来源中，原有 trace / eval 来源按 2026-05-30 访问时理解；本次补充的公开 benchmark 来源按 2026-06-01 访问时理解。不同平台对 trace、eval、dataset、grader 和 benchmark 的命名不同，本章采用工程抽象，不将任何产品 API 或公开榜单写成统一标准。
 
 - [OpenAI Agents SDK: Tracing](https://openai.github.io/openai-agents-python/tracing/)
 - [OpenAI API: Getting started with datasets](https://developers.openai.com/api/docs/guides/evaluation-getting-started)
@@ -991,31 +1095,37 @@ Trace 写入不能阻塞主链路太久。常见做法：
 - [OpenTelemetry: Semantic conventions for generative AI systems](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
 - [OpenTelemetry: Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [LangSmith Docs: Evaluation concepts](https://docs.langchain.com/langsmith/evaluation-concepts)
+- [Meta AI: GAIA, a benchmark for general AI assistants](https://ai.meta.com/research/publications/gaia-a-benchmark-for-general-ai-assistants/)
+- [SWE-bench GitHub Repository](https://github.com/swe-bench/SWE-bench)
+- [τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains](https://arxiv.org/abs/2406.12045)
+- [AgentBench: Evaluating LLMs as Agents](https://arxiv.org/abs/2308.03688)
+- [OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments](https://arxiv.org/abs/2404.07972)
+- [Terminal-Bench](https://www.tbench.ai/)
 
 ## 写作审查记录
 
 ### 章节架构师
 
 - 本章目标：解释 Agent 系统如何通过 trace、logs、metrics、token、eval 和 feedback 建立可观测与评估闭环。
-- 知识点地图：Trace Schema、Span Schema、Metrics、Token / Cost、Prompt Version、Eval Dataset、Grader、Trace Grading、Feedback Loop、Dashboard、Alert、隐私和发布回归。
+- 知识点地图：Trace Schema、Span Schema、Metrics、Token / Cost、Prompt Version、Eval Dataset、常用 Benchmark、Grader、Trace Grading、Feedback Loop、Dashboard、Alert、隐私和发布回归。
 - 前后章节关系：承接第 19 章后端架构，为第 21 章安全与权限铺垫。
 
 ### 技术审稿人
 
 - 发现问题：不同平台对 trace、eval、dataset、grader 的术语和能力不同，不能混成一个统一产品 API；OpenAI tracing 的敏感数据采集默认行为和 OpenTelemetry GenAI semantic conventions 的演进状态也需要提醒。
-- 修订动作：使用 OpenAI Agents SDK tracing、OpenAI datasets / trace grading、OpenTelemetry GenAI semantic conventions、LangSmith evaluation concepts 作为来源；正文采用工程抽象，避免写死具体 API；补充 `trace_include_sensitive_data` 生产配置提醒和 OTel semconv Development 状态说明。
+- 修订动作：使用 OpenAI Agents SDK tracing、OpenAI datasets / trace grading、OpenTelemetry GenAI semantic conventions、LangSmith evaluation concepts 作为来源；补充 GAIA、SWE-bench、τ-bench、AgentBench、OSWorld、Terminal-Bench 作为公开 benchmark 参考；正文采用工程抽象，避免写死具体 API；补充 `trace_include_sensitive_data` 生产配置提醒和 OTel semconv Development 状态说明。
 - 结论：概念边界清楚，没有把某个平台能力写成行业标准。
 
 ### 工程审稿人
 
 - 发现问题：只讲“记录日志和跑 eval”不足以指导生产排障；初版 trace、audit、cost、feedback 和 alert 字段还不够支撑真实平台。
-- 修订动作：补充 trace schema、span schema、OTel 对齐字段、Audit schema、metrics、token 成本归集、价格版本、prompt 版本、eval dataset、grader、trace grading、feedback loop、dashboard、alert owner/runbook/自动动作和评估样本。
+- 修订动作：补充 trace schema、span schema、OTel 对齐字段、Audit schema、metrics、token 成本归集、价格版本、prompt 版本、eval dataset、公开 benchmark 选型边界、grader、trace grading、feedback loop、dashboard、alert owner/runbook/自动动作和评估样本。
 - 结论：章节能映射到真实后端系统，覆盖过程复盘、指标监控、成本归集、回归评估和反馈闭环。
 
 ### 学习体验审稿人
 
 - 发现问题：读者容易把可观测性理解成日志，把评估理解成最终答案对错。
-- 修订动作：沿用 kb-assistant 错误上线判断案例，展示没有 trace 时无法排查，有 trace 和 eval 时能归因和回归。
+- 修订动作：沿用 kb-assistant 错误上线判断案例，展示没有 trace 时无法排查，有 trace 和 eval 时能归因和回归；补充公开 benchmark 不能替代内部 eval 的解释，避免读者把榜单分数当上线依据。
 - 结论：章节能帮助读者建立“过程可见 + 数据证明”的工程直觉。
 
 ### 主编

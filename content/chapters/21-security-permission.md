@@ -22,6 +22,7 @@
 - 为什么“告诉模型不要这样做”不是安全边界？
 - 权限应该绑定用户、Agent、工具、资源还是审批？
 - 如何设计最小权限、凭证隔离、审批和审计？
+- 为什么 Agent 需要沙箱执行，沙箱又不能替代权限和审批？
 - MCP / Tool / Plugin / Skill 这类外部能力接入时要注意什么？
 - 如何评估安全策略是否真的生效？
 
@@ -613,6 +614,135 @@ Credential Broker 负责凭证注入：
 
 输出安全不是只检查敏感词。它还要检查是否做出了未经证据支持的承诺。
 
+### Agent 沙箱执行
+
+沙箱解决的是一个很具体的问题：
+
+> 即使模型被诱导、工具被污染、命令写错，执行环境也不应该无限制接触真实系统。
+
+Agent 需要沙箱，不是因为我们不信任某个模型，而是因为 Agent 会把不确定的模型输出连接到确定的外部动作：
+
+- 读写文件。
+- 执行 shell 命令。
+- 安装依赖。
+- 运行测试。
+- 操作浏览器。
+- 调用内部服务。
+- 处理用户上传文件。
+- 运行第三方 MCP / Plugin / Skill。
+
+没有沙箱时，一个 prompt injection 可能从“说错话”升级成“执行错误命令、读取 secret、访问内网或修改文件”。沙箱的目标是把损害限制在可控范围内。
+
+沙箱不是权限系统的替代。更准确的分工是：
+
+| 控制层 | 解决什么问题 |
+| --- | --- |
+| Policy | 这个动作是否允许发生 |
+| Approval | 高风险动作是否经过人确认 |
+| Sandbox | 动作即使发生，也只能影响受控环境 |
+| Credential Broker | 动作只能拿到最小范围、短期凭证 |
+| Audit / Trace | 动作发生后能复盘和追责 |
+
+因此，不能只说“我们有 Docker，所以安全”。Docker、VM、浏览器隔离或托管沙箱只是执行边界，仍然需要策略、审批、凭证和审计。
+
+### 沙箱选型表
+
+不同 Agent 场景需要不同沙箱强度：
+
+| 沙箱类型 | 适合场景 | 关键控制点 | 不适合 |
+| --- | --- | --- | --- |
+| 命令 allowlist + 工作目录限制 | 低风险只读命令、简单项目检查 | 命令白名单、路径规范化、禁止越界 | 不适合运行未知脚本 |
+| 工作区沙箱 | 文件读取、局部文件编辑、diff 生成 | writable roots、保护路径、dirty worktree 检查 | 不适合处理不可信依赖 |
+| 容器沙箱 | 测试、构建、代码执行、批量 eval | 网络默认关闭或 allowlist、资源限制、只挂载必要目录、无生产凭证 | 不适合强隔离合规场景 |
+| VM / microVM | 高风险代码执行、不可信依赖、企业隔离 | 镜像基线、快照回滚、网络分区、审计采集 | 启动和资源成本更高 |
+| 浏览器沙箱 | Computer Use、网页阅读、表单草稿 | 域名 allowlist、截图脱敏、动作确认、临时登录态 | 不适合默认自动提交写操作 |
+| 托管云沙箱 | 企业 coding agent、集中 eval、团队平台 | 数据边界、日志保留、网络策略、供应商审查 | 不适合未评估数据合规的敏感代码 |
+
+选型时不要只看“能不能跑起来”，要问：
+
+- 需要读哪些文件？
+- 允许写哪些路径？
+- 是否需要网络？
+- 网络能去哪些域名？
+- 是否需要 secret？
+- secret 是否短期、最小范围、不可回显？
+- 失败后如何销毁或回滚环境？
+- trace 是否能记录命令、exit code、资源使用和策略决策？
+
+### 沙箱 Profile 示例
+
+一个团队可以定义几档 sandbox profile：
+
+```json
+{
+  "sandbox_profile": {
+    "name": "agent_test_container",
+    "allowed_actions": ["read_files", "write_workspace", "run_tests"],
+    "filesystem": {
+      "read_roots": ["repo/"],
+      "write_roots": ["repo/src/", "repo/tests/", "tmp/"],
+      "protected_paths": [".env", "secrets/", "production/"],
+      "canonical_path_check": true,
+      "deny_symlink_escape": true,
+      "deny_hardlink_to_protected_path": true,
+      "mount_read_only_by_default": true
+    },
+    "network": {
+      "mode": "allowlist",
+      "allowed_hosts": ["registry.npmjs.org", "repo.maven.apache.org"]
+    },
+    "dependency_policy": {
+      "lockfile_required": true,
+      "frozen_install": true,
+      "package_registry_allowlist": ["registry.npmjs.org", "repo.maven.apache.org"],
+      "dependency_change_requires_approval": true,
+      "postinstall_policy": "disabled_or_requires_approval"
+    },
+    "environment": {
+      "allowed_env_vars": ["CI", "NODE_ENV"],
+      "secret_mounts": []
+    },
+    "resource_limits": {
+      "cpu": "bounded",
+      "memory": "bounded",
+      "timeout": "policy_configured"
+    },
+    "audit": {
+      "record_commands": true,
+      "record_exit_code": true,
+      "redact_output": true
+    }
+  }
+}
+```
+
+这些字段是工程示例，不是某个产品的配置格式。真正落地时要映射到操作系统、容器平台、浏览器环境或托管沙箱的具体能力。
+
+文件系统沙箱尤其要小心路径逃逸。`read_roots`、`write_roots` 和 `protected_paths` 不能只做字符串前缀判断，必须基于 canonical path 检查；挂载目录默认只读；符号链接和 hardlink 不能指向受保护路径或沙箱外路径。依赖安装也不是普通网络访问，包仓库 allowlist 之外，还要有 lockfile、frozen install、依赖变更审批和 postinstall 策略，否则测试命令可能间接执行不受控代码。
+
+### 沙箱的局限
+
+沙箱也有边界：
+
+- 它不能判断业务动作是否应该发生。
+- 它不能替代审批。
+- 它不能保证依赖包没有供应链风险。
+- 它不能自动识别所有敏感信息。
+- 它不能证明模型最终回答正确。
+- 它不能消除浏览器点击带来的业务副作用。
+
+所以生产 Agent 的安全模型应该是：
+
+```text
+least privilege
+  -> policy decision
+  -> approval for side effect
+  -> credential isolation
+  -> sandbox execution
+  -> audit and trace
+  -> security eval
+```
+
 ### MCP / Plugin / Skill 接入安全
 
 外部能力接入时要额外注意：
@@ -1036,38 +1166,40 @@ Agent 安全与权限解决的是“能力越大，边界越清楚”的问题�
 
 ## Sources
 
-以下来源按 2026-05-30 访问时理解；安全风险清单、MCP 授权和 guardrails 都在持续演进，本章采用工程抽象，不将任何清单或 SDK 能力写成完整生产安全方案。
+以下来源中，原有安全、MCP 和 guardrails 来源按 2026-05-30 访问时理解；本次补充的 Agent 沙箱来源按 2026-06-01 访问时理解。安全风险清单、MCP 授权、guardrails 和沙箱能力都在持续演进，本章采用工程抽象，不将任何清单或 SDK 能力写成完整生产安全方案。
 
 - [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 - [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/)
 - [Model Context Protocol: Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 - [Model Context Protocol: Authorization](https://modelcontextprotocol.io/specification/draft/basic/authorization)
 - [OpenAI Agents SDK: Guardrails](https://openai.github.io/openai-agents-python/guardrails/)
+- [OpenAI: Running Codex safely at OpenAI](https://openai.com/index/running-codex-safely/)
+- [Claude Code Docs: Sandboxing](https://code.claude.com/docs/en/sandboxing)
 
 ## 写作审查记录
 
 ### 章节架构师
 
 - 本章目标：解释 Agent 的主要安全攻击面和权限控制方式。
-- 知识点地图：Prompt Injection、Tool Injection、Excessive Agency、Trust Label、Policy Decision、权限矩阵、Tool Gateway、Approval、Audit Log、Credential Broker、Output Security、MCP 安全和 Security Eval。
+- 知识点地图：Prompt Injection、Tool Injection、Excessive Agency、Trust Label、Policy Decision、权限矩阵、Tool Gateway、Approval、Audit Log、Credential Broker、Output Security、Agent 沙箱执行、MCP 安全和 Security Eval。
 - 前后章节关系：承接第 20 章可观测性，为第 22 章性能与成本优化提供安全边界。
 
 ### 技术审稿人
 
 - 发现问题：安全风险清单、SDK guardrail、MCP Authorization 和第三方能力接入容易被误写成完整安全方案。
-- 修订动作：引用 OWASP LLM Top 10、MCP Security Best Practices / Authorization、OpenAI Guardrails；明确 guardrail 触发边界、MCP Authorization 的 HTTP-based transport 和可选能力边界，补充 confused deputy、redirect URI、OAuth state、SSRF、session hijacking、本地 MCP Server sandbox 等接入控制点。
+- 修订动作：引用 OWASP LLM Top 10、MCP Security Best Practices / Authorization、OpenAI Guardrails、OpenAI Codex 安全文章和 Claude Code Sandboxing 文档；明确 guardrail 触发边界、MCP Authorization 的 HTTP-based transport 和可选能力边界，补充 confused deputy、redirect URI、OAuth state、SSRF、session hijacking、本地 MCP Server sandbox 等接入控制点。
 - 结论：章节没有把 Prompt、Guardrail 或 MCP 说成完整安全边界。
 
 ### 工程审稿人
 
 - 发现问题：如果只讲攻击概念，无法指导后端实现安全控制；审批、凭证和审计对象必须有可验证完整性的字段。
-- 修订动作：补充安全架构、后端不可篡改 Trust Label、Policy Decision、权限矩阵、Tool Gateway 检查、审批对象防篡改字段、审批后执行伪代码、Audit Log 防篡改字段、Credential Broker 的 audience / issuer / egress policy、Output Security、MCP / Plugin / Skill 接入安全和 Security Eval。
+- 修订动作：补充安全架构、后端不可篡改 Trust Label、Policy Decision、权限矩阵、Tool Gateway 检查、审批对象防篡改字段、审批后执行伪代码、Audit Log 防篡改字段、Credential Broker 的 audience / issuer / egress policy、Output Security、Agent 沙箱执行的分层选型、MCP / Plugin / Skill 接入安全和 Security Eval。
 - 结论：章节能映射到真实后端系统，覆盖输入、上下文、工具、凭证、审批、审计、输出和安全评估。
 
 ### 学习体验审稿人
 
 - 发现问题：读者容易把安全理解成“Prompt 写得更严一点”。
-- 修订动作：沿用 kb-assistant 的 RAG 注入和工具结果注入案例，展示为什么后端策略才是硬边界。
+- 修订动作：沿用 kb-assistant 的 RAG 注入和工具结果注入案例，展示为什么后端策略才是硬边界；补充沙箱、Policy、Approval、Credential Broker、Audit / Trace 的分工，避免读者把沙箱误解成万能安全方案。
 - 结论：章节能帮助读者从提示词安全转向系统安全。
 
 ### 主编
