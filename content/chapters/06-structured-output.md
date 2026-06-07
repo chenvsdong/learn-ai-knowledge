@@ -27,6 +27,9 @@
 
 - 为什么自然语言输出不适合直接进入后端系统？
 - JSON、JSON Schema、Structured Outputs、Function Calling、Tool Calling 有什么区别？
+- 模型 API 原始响应、模型生成内容和业务结构化对象有什么区别？
+- 普通文本、JSON、工具调用、音频、图片、视频和流式增量分别通常以什么形态返回？
+- OpenAI Responses / Chat Completions 与 Anthropic Messages 在响应结构和鉴权头上有什么主要差异？
 - “模型输出 JSON”为什么不等于“业务结果可靠”？
 - 如何设计输出 Schema，让模型生成字段、后端计算字段、人工确认字段分清楚？
 - 如何做解析校验、Schema 校验、引用校验、业务校验和安全校验？
@@ -36,7 +39,7 @@
 
 本章重点不是让读者记住各框架 API，而是理解它们分别落在输出约束、工具参数、工具结果、后端校验和自动化消费的哪些位置。
 
-截至 2026-05，主流模型和框架都在增强原生结构化输出能力，但不同供应商、模型和 SDK 对 JSON Schema、strict mode、tool calling、top-level array、递归类型、多态类型等支持并不完全一致。本章不把某个能力写成所有模型通用事实。涉及具体 API、配置项和支持范围时，应以当前官方文档为准。
+截至 2026-06，主流模型和框架都在增强原生结构化输出能力，但不同供应商、模型和 SDK 对 JSON Schema、strict mode、tool calling、top-level array、递归类型、多态类型、音频和视频输出等支持并不完全一致。本章不把某个能力写成所有模型通用事实。涉及具体 API、配置项和支持范围时，应以当前官方文档为准。
 
 读完本章，读者应该能够为一个 Agent 任务设计输出契约，并把模型结果接入真实后端流程，而不是停留在“让模型输出一段 JSON”。
 
@@ -521,6 +524,146 @@ ContextPackage
 关键点是：模型输出、校验结果、执行决策要分开。不要让模型直接决定是否写数据库。
 
 日志不要只记录最终 JSON。至少要记录输入引用、上下文版本、Prompt 版本、Schema 版本、输出模式、校验结果、决策原因、重试次数、成本和耗时。敏感正文应脱敏或只保存引用，避免为了排障制造新的数据泄漏面。
+
+### 模型 API 返回的到底是什么
+
+学习结构化输出时，最容易混淆三层东西：
+
+| 层级 | 它是什么 | 常见误解 |
+| --- | --- | --- |
+| HTTP / SDK 响应 | provider 返回的 JSON 对象、二进制流、SSE / WebSocket 事件或 SDK 对象 | 以为它就是模型最终答案 |
+| 模型内容 | 文本片段、content block、output item、tool call、audio delta、image / video artifact 引用 | 以为所有 provider 都用同一种字段 |
+| 业务对象 | 后端解析、校验、归一化后的 DTO 或 domain event | 以为模型生成 JSON 就等于业务对象可信 |
+
+所以一条完整链路应该是：
+
+```text
+Provider HTTP / SDK Response
+  -> provider-specific response object
+  -> text / content block / output item / tool call / media artifact
+  -> Model Gateway normalized ModelResponse
+  -> schema validation
+  -> business validation
+  -> application result
+```
+
+这也是为什么本章不直接说“模型返回 JSON”。更准确地说：模型服务 API 通常用 JSON 包装响应；模型生成的内容可能是文本、结构化 JSON 字符串、工具调用参数、音频片段、图片对象、视频任务或流式事件；业务系统最终消费的是后端校验后的对象。
+
+### 常见返回形态
+
+不同 provider、endpoint 和模型能力会改变返回形态。工程上可以先按下面的分类理解：
+
+| 返回形态 | 常见 API 形态 | 后端应该如何处理 |
+| --- | --- | --- |
+| 普通文本 | JSON 响应里的一段 text，或流式 text delta | 拼接、截断检查、输出策略检查 |
+| 结构化 JSON | 文本中的 JSON、schema-constrained output、tool input JSON | 解析、Schema 校验、业务校验 |
+| 工具调用 | tool call / function call / `tool_use` content block | 后端执行或拒绝，结果以 tool result / observation 回填 |
+| 图片 | 图片生成 API 返回图片对象、URL、base64 或文件引用，具体取决于 endpoint | 保存 artifact ref，记录模型、尺寸、来源和安全检查 |
+| 音频 | 专用 Speech API、Chat audio response、Realtime WebRTC / WebSocket audio event | 保存音频 artifact 或按事件流播放，同时记录 transcript 和格式 |
+| 视频 | 通常是专用 Video API 的异步任务、视频对象和下载内容，不应假设是 chat message 里的普通字段 | 轮询状态、保存 artifact ref、记录生成参数和内容安全结果 |
+| 流式增量 | SSE、WebSocket 或 SDK stream event | 按 event type 和 sequence 组装，处理重连、乱序、错误和最终状态 |
+
+音频和视频尤其要小心。OpenAI 文档中，Realtime API 面向低延迟语音交互，支持 WebRTC、WebSocket、SIP 等连接方式；Audio 指南也把 Realtime、Chat Completions、Transcription、Speech 等路径区分开。视频生成则属于专用视频 API 和 artifact 生命周期，不适合写成“聊天接口直接返回一个视频字段”的通用规律。
+
+### OpenAI 与 Anthropic 响应格式对比
+
+下面这张表只用于建立工程直觉，不能替代当前官方 API 文档。字段会随 API 版本、模型和 endpoint 演进。
+
+| 维度 | OpenAI Responses / Chat Completions | Anthropic Messages |
+| --- | --- | --- |
+| 鉴权 | OpenAI API 通常使用 Bearer token | Anthropic API 通常使用 `x-api-key`，并要求 `anthropic-version` 标注 API 版本 |
+| 非流式文本 | Responses API 更偏 `output` / output item；Chat Completions 使用 `choices[].message` | Messages API 返回 `content[]`，文本是 `type: "text"` 的 content block |
+| 停止原因 | Chat Completions 有 `finish_reason`；Responses API 有自己的 response 状态和 output 结构 | Messages API 使用 `stop_reason`，例如自然结束、达到 token 上限或工具调用 |
+| 工具调用 | OpenAI 以 tool / function call 形式返回结构化参数，后端或平台执行 | Claude 返回 `tool_use` content block；client tool 由应用执行，再发送 `tool_result` |
+| 工具结果 | 通常作为后续输入 item / message 回填 | 作为 `tool_result` content block 回填 |
+| 流式 | OpenAI Responses / Realtime 都使用 typed events；Realtime 还会有音频和 transcript delta | Anthropic Messages streaming 使用 `message_start`、`content_block_delta`、`message_delta`、`message_stop` 等事件 |
+| 用量 | OpenAI response / chat object 包含 usage 字段或 chunk 后聚合 | Anthropic message / stream delta 中包含 usage 信息 |
+| 错误 | HTTP 状态码、错误对象和 request id / headers | HTTP 错误返回 JSON error 对象，并提供 request id |
+
+一个很小的 OpenAI Chat Completions 响应片段可能长这样：
+
+```json
+{
+  "id": "chatcmpl_example",
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "上线风险主要是权限过滤和压测报告。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 32,
+    "total_tokens": 132
+  }
+}
+```
+
+一个很小的 Anthropic Messages 响应片段可能长这样：
+
+```json
+{
+  "id": "msg_example",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "上线风险主要是权限过滤和压测报告。"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 32
+  }
+}
+```
+
+这两个对象都能表达“一段回答”，但业务代码不应该到处写：
+
+```text
+if provider == openai:
+  read choices[0].message.content
+else if provider == anthropic:
+  read content[0].text
+```
+
+更好的做法是让 Model Gateway 做 provider adapter，把它们归一化成内部对象：
+
+```json
+{
+  "ModelResponse": {
+    "provider": "openai",
+    "provider_request_id": "req_ref",
+    "model_profile": "reasoning-medium",
+    "response_kind": "final",
+    "content_parts": [
+      {
+        "type": "text",
+        "text_ref": "redacted_text_ref",
+        "text_hash": "sha256:..."
+      }
+    ],
+    "tool_calls": [],
+    "media_artifacts": [],
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": 100,
+      "output_tokens": 32,
+      "usage_source": "provider_response"
+    },
+    "raw_response_ref": "provider_raw_response_ref"
+  }
+}
+```
+
+内部对象的目标不是抹掉 provider 差异，而是把差异限制在 Adapter 层。Trace 中可以保留脱敏后的 `raw_response_ref` 用于排障；业务层只消费 `content_parts`、`tool_calls`、`media_artifacts`、`usage`、`stop_reason` 和校验结果。
 
 ### 最小闭环先掌握什么
 
@@ -1233,10 +1376,20 @@ JSON Mode 通常解决合法 JSON，不等于符合业务字段契约。
 
 ## Sources
 
-以下来源按 2026-05-29 访问时的官方文档理解；OpenAI Structured Outputs、MCP schema、Spring AI 和 LangChain4j 的具体支持范围以后续官方文档和项目依赖版本为准。
+以下来源按 2026-05-29 访问时的官方文档理解；本轮新增的 OpenAI / Anthropic 响应格式、鉴权、音频和视频 API 来源按 2026-06-07 访问时理解。OpenAI Structured Outputs、MCP schema、Spring AI 和 LangChain4j 的具体支持范围以后续官方文档和项目依赖版本为准。
 
 - [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
-- [OpenAI API Reference: Responses](https://platform.openai.com/docs/api-reference/responses)
+- [OpenAI API Reference: Responses](https://developers.openai.com/api/reference/resources/responses/methods/create)
+- [OpenAI API Reference: Chat Completions](https://developers.openai.com/api/reference/resources/chat)
+- [OpenAI API Reference: Overview and authentication](https://developers.openai.com/api/reference/overview)
+- [OpenAI API: Audio and speech](https://developers.openai.com/api/docs/guides/audio)
+- [OpenAI API Reference: Realtime](https://platform.openai.com/docs/api-reference/realtime)
+- [OpenAI API Reference: Videos](https://developers.openai.com/api/reference/resources/videos/methods/create)
+- [Anthropic Claude API: Overview](https://platform.claude.com/docs/en/api/overview)
+- [Anthropic Claude API: Messages](https://platform.claude.com/docs/en/api/messages)
+- [Anthropic Claude API: Streaming messages](https://platform.claude.com/docs/en/build-with-claude/streaming)
+- [Anthropic Claude API: Tool use with Claude](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
+- [Anthropic Claude API: Errors](https://platform.claude.com/docs/en/api/errors)
 - [Spring AI Structured Output](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html)
 - [LangChain4j Structured Outputs](https://docs.langchain4j.dev/tutorials/structured-outputs/)
 - [LangChain4j AI Services API](https://docs.langchain4j.dev/apidocs/dev/langchain4j/service/AiServices.html)
@@ -1254,11 +1407,11 @@ JSON Mode 通常解决合法 JSON，不等于符合业务字段契约。
 
 ### 技术审稿人
 
-审稿指出 MCP 工具结果示例缺少必需的 `content`，JSON Schema 与 Structured Outputs 容易混淆，OpenAI Structured Outputs 缺少 refusal / 截断 / schema 子集边界，编码 Agent CLI JSON 输出格式与最终任务 JSON Schema 需要区分，LangChain4j fallback 条件需要补充。正文已修订能力对照表、MCP 示例、OpenAI API 边界，并补充 LangChain4j fallback 风险；编码 Agent JSON 契约保留为可选扩展。
+审稿指出 MCP 工具结果示例缺少必需的 `content`，JSON Schema 与 Structured Outputs 容易混淆，OpenAI Structured Outputs 缺少 refusal / 截断 / schema 子集边界，编码 Agent CLI JSON 输出格式与最终任务 JSON Schema 需要区分，LangChain4j fallback 条件需要补充；本轮又发现章节缺少模型 API 原始响应、content block / output item、tool call、音频、视频和流式事件的返回形态说明。正文已修订能力对照表、MCP 示例、OpenAI API 边界，补充 LangChain4j fallback 风险，并新增 OpenAI / Anthropic 响应格式对比、常见返回形态和 Model Gateway 归一化对象；编码 Agent JSON 契约保留为可选扩展。
 
 ### 工程审稿人
 
-审稿指出本章缺少部署版本治理、后端状态机、生产异常分类、可执行日志 schema、四层场景工程差异和发布门禁。正文已新增结构化输出请求状态机、系统异常与业务异常分层、部署与版本治理、扩展 `OutputSnapshot`、场景对比表和评估发布门禁；编码 Agent 自动化输出 envelope 不作为本章主线展开。
+审稿指出本章缺少部署版本治理、后端状态机、生产异常分类、可执行日志 schema、四层场景工程差异和发布门禁。正文已新增结构化输出请求状态机、系统异常与业务异常分层、部署与版本治理、扩展 `OutputSnapshot`、场景对比表和评估发布门禁；本轮补充 provider raw response 到业务 DTO 的流水线，明确原始响应、模型内容和业务对象必须分层处理；编码 Agent 自动化输出 envelope 不作为本章主线展开。
 
 ### 学习体验审稿人
 

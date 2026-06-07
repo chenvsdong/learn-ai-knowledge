@@ -85,9 +85,9 @@
             "title": "结构化输出与可靠性",
             "level": "进阶",
             "status": "draft",
-            "tags": ["JSON", "Schema", "可靠性"],
+            "tags": ["JSON", "Schema", "响应格式", "可靠性"],
             "source": "content/chapters/06-structured-output.md",
-            "summary": ["JSON 与 JSON Schema", "输出校验、自动修复、重试策略", "可被程序消费的模型输出"]
+            "summary": ["API 响应、Content Block 与业务对象", "JSON Schema、输出校验、自动修复", "可被程序消费的模型输出"]
           }
         ]
       },
@@ -241,7 +241,7 @@
             "status": "draft",
             "tags": ["Java", "Spring AI", "LangChain4j"],
             "source": "content/chapters/19-agent-backend-architecture.md",
-            "summary": ["API 层、模型层、工具层、记忆层、任务层", "SSE / WebSocket 流式响应", "多租户与任务隔离"]
+            "summary": ["API 层、模型层、工具层、记忆层、任务层", "Provider Response Adapter 与流式事件", "多租户与任务隔离"]
           },
           {
             "id": "20-observability-evaluation",
@@ -369,7 +369,7 @@
             "status": "draft",
             "tags": ["术语表", "概念索引", "附录"],
             "source": "content/chapters/30-glossary-concept-index.md",
-            "summary": ["统一 AI Agent 核心术语", "区分易混淆概念", "把术语映射到工程层级和责任边界"]
+            "summary": ["统一 AI Agent 核心术语", "补充模型返回格式与协议术语", "把术语映射到工程层级和责任边界"]
           }
         ]
       }

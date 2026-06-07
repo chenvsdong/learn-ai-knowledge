@@ -540,6 +540,90 @@ Model Profile 示例：
 
 Model Gateway 不应该把供应商 API 细节泄漏到业务层。业务层只关心 model profile。
 
+### Provider Response Adapter
+
+Model Gateway 还要负责把不同 provider 的响应归一化。OpenAI Responses、OpenAI Chat Completions、Anthropic Messages、Realtime audio event、视频生成任务返回的对象并不一样；业务层如果直接读取 `choices[]`、`output[]`、`content[]`、`tool_use` 或 audio delta，就会被 provider 细节绑死。
+
+推荐做一个 Provider Response Adapter：
+
+```text
+Provider raw response / stream event
+  -> Response Adapter
+      -> normalize content parts
+      -> normalize tool calls
+      -> normalize media artifacts
+      -> normalize usage and stop reason
+      -> redact raw payload
+      -> store raw_response_ref
+  -> Internal ModelResponse / ModelStreamEvent
+```
+
+内部对象可以这样设计：
+
+```json
+{
+  "model_response": {
+    "run_id": "run_001",
+    "step_id": "step_model_002",
+    "provider": "anthropic",
+    "provider_request_id": "req_ref",
+    "model_profile": "reasoning-medium-tool-use",
+    "model_profile_version": "2026-06-07",
+    "response_kind": "tool_call",
+    "content_parts": [
+      {
+        "index": 0,
+        "type": "text",
+        "text_ref": "redacted_text_ref",
+        "text_hash": "sha256:..."
+      }
+    ],
+    "tool_calls": [
+      {
+        "tool_call_id": "tc_001",
+        "tool_name": "list_release_checks",
+        "arguments_ref": "tool_args_ref",
+        "arguments_hash": "sha256:...",
+        "provider_format": "content_block_tool_use"
+      }
+    ],
+    "media_artifacts": [],
+    "stop_reason": "tool_use",
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 180,
+      "usage_source": "provider_response"
+    },
+    "raw_response_ref": "raw_provider_response_redacted_ref"
+  }
+}
+```
+
+流式事件也要归一化：
+
+```json
+{
+  "model_stream_event": {
+    "event_id": "evt_model_000012",
+    "seq": 12,
+    "provider": "openai",
+    "provider_event_type": "response.output_text.delta",
+    "normalized_event_type": "text_delta",
+    "content_part_index": 0,
+    "delta_ref": "redacted_delta_ref",
+    "is_final": false,
+    "created_at": "2026-06-07T10:30:00+08:00"
+  }
+}
+```
+
+这里要保留两个事实：
+
+- 内部对象要稳定，让 Runtime、Trace、Eval、前端事件都能复用。
+- 原始 provider 响应不能随便丢，因为排查 tool call 参数、finish / stop reason、音频事件顺序、usage 统计和供应商错误时仍需要可回放证据。
+
+但原始响应不应直接进模型上下文、前端事件或普通日志。生产系统应该保存脱敏引用、hash、provider request id、adapter version 和 schema version，而不是把完整原文、音频 base64、工具参数或 secret 名称铺进 trace。
+
 ### Tool Gateway
 
 Tool Gateway 统一工具调用：
@@ -1064,8 +1148,14 @@ AI Agent 后端架构解决的是“如何把 Agent 能力落到真实服务”�
 
 ## Sources
 
-以下来源按 2026-05-30 访问时理解；Spring AI 文档页面当前显示 1.1.7，本章按该页面公开能力边界理解。LangChain4j 也按当前官方文档能力边界理解。两者版本演进较快，因此正文不写死具体版本 API。
+以下来源按 2026-05-30 访问时理解；本轮新增的 OpenAI / Anthropic provider response adapter 相关来源按 2026-06-07 访问时理解。Spring AI 文档页面当前显示 1.1.7，本章按该页面公开能力边界理解。LangChain4j 也按当前官方文档能力边界理解。两者版本演进较快，因此正文不写死具体版本 API。
 
+- [OpenAI API Reference: Responses](https://developers.openai.com/api/reference/resources/responses/methods/create)
+- [OpenAI API Reference: Chat Completions](https://developers.openai.com/api/reference/resources/chat)
+- [OpenAI API: Audio and speech](https://developers.openai.com/api/docs/guides/audio)
+- [Anthropic Claude API: Overview](https://platform.claude.com/docs/en/api/overview)
+- [Anthropic Claude API: Streaming messages](https://platform.claude.com/docs/en/build-with-claude/streaming)
+- [Anthropic Claude API: Tool use with Claude](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
 - [Spring AI Reference: Chat Client API](https://docs.spring.io/spring-ai/reference/api/chatclient.html)
 - [Spring AI Reference: Advisors API](https://docs.spring.io/spring-ai/reference/api/advisors.html)
 - [Spring AI Reference: Tool Calling](https://docs.spring.io/spring-ai/reference/api/tools.html)
@@ -1094,7 +1184,7 @@ AI Agent 后端架构解决的是“如何把 Agent 能力落到真实服务”�
 ### 工程审稿人
 
 - 发现问题：如果只讲框架使用，无法支撑真实生产后端；初版 API、Run / Step、SSE、Tool Registry 和多租户隔离还缺少部分生产治理字段。
-- 修订动作：补充任务 API、Run / Step 数据模型、幂等创建、事件序号和重连协议、Worker / Queue、SSE 事件、Model Gateway、Tool Gateway、Context / Memory、多租户强制机制、事务一致性、成本归集样本和写工具审批样本。
+- 修订动作：补充任务 API、Run / Step 数据模型、幂等创建、事件序号和重连协议、Worker / Queue、SSE 事件、Model Gateway、Provider Response Adapter、Tool Gateway、Context / Memory、多租户强制机制、事务一致性、成本归集样本和写工具审批样本。
 - 结论：章节能映射到真实 Java 后端系统，覆盖输入、处理、输出、状态、异常、权限、日志、评估和部署边界。
 
 ### 学习体验审稿人

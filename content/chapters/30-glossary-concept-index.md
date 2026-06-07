@@ -211,7 +211,7 @@ AI / ML / DL / LLM
 | 章节 | 重点术语 |
 | --- | --- |
 | 第 1-3 章 | AI、Machine Learning、Deep Learning、LLM、Token、Embedding、Transformer、Multimodal Model |
-| 第 4-6 章 | Prompt、System Message、Context Engineering、Context Package、Structured Output、JSON Schema、Unknown |
+| 第 4-6 章 | Prompt、System Message、Context Engineering、Context Package、API Response、Content Block、Output Item、Structured Output、JSON Schema、Unknown |
 | 第 7-9 章 | RAG、Chunk、Vector Store、Hybrid Search、Rerank、Citation、Memory、Verified Fact |
 | 第 10-13 章 | Function Calling、Tool、Tool Schema、Tool Registry、MCP、MCP Resource、MCP Tool、Skill、Plugin |
 | 第 14-17 章 | Agent、Agent Run、Agent Step、Plan、Agent Runtime、Stop Condition、Handoff、Multi-Agent、Supervisor |
@@ -223,7 +223,7 @@ AI / ML / DL / LLM
 
 | 能力方向 | 重点术语 |
 | --- | --- |
-| 模型调用 | LLM、Token、Model Gateway、Structured Output、JSON Schema |
+| 模型调用 | LLM、Token、Model Gateway、API Response、Provider Response、Content Block、Output Item、Delta Event、Tool Call、Usage、Structured Output、JSON Schema |
 | 上下文工程 | Prompt、Context Package、Context Snapshot、Trust Label、Data Classification |
 | 知识治理 | RAG、Chunk、Vector Store、Citation、Freshness、Verified Fact |
 | 记忆系统 | Memory、Short-term Memory、Long-term Memory、Conversation State、Verified Fact |
@@ -264,6 +264,22 @@ AI / ML / DL / LLM
 | Structured Output | 模型输出可被程序解析的结构 | 不保证业务正确 | Schema Validator | 第 6 章 |
 | JSON Schema | 描述 JSON 结构的 schema | 不等于业务规则全部 | Validator / Contract | 第 6 章 |
 | Unknown | 系统承认无法确定的状态 | 不等于失败 | Output policy | 第 6、23 章 |
+
+### 模型返回与协议对象
+
+| 术语 | 简要定义 | 不要混淆 | 工程位置 | 相关章节 |
+| --- | --- | --- | --- | --- |
+| API Response | 模型供应商 API 或 SDK 返回的外层响应对象 | 不等于业务结果对象 | Model Gateway | 第 6、19 章 |
+| Provider Response | 某个供应商特有的响应格式 | 不应泄漏到业务层 | Provider Adapter | 第 6、19 章 |
+| Content Block | 内容数组中的一个类型化内容块，例如 text、tool_use 或 tool_result | 不等于整条回答 | Model Gateway / Runtime | 第 6、10-12 章 |
+| Output Item | OpenAI Responses 等接口中的类型化输出项 | 不等于所有供应商通用字段 | Provider Adapter | 第 6、19 章 |
+| Delta Event | 流式响应中的增量事件 | 不等于最终完整对象 | Event Gateway / Stream Adapter | 第 6、19-20 章 |
+| Tool Call | 模型请求调用工具时生成的结构化动作意图 | 不等于工具已经执行 | Tool Gateway | 第 10-11、19 章 |
+| Tool Result | 工具执行后回填给模型或 Runtime 的结果 | 不等于完整原始工具响应 | Tool Gateway / Runtime | 第 10-12、16 章 |
+| Usage | provider 返回的 token、音频、工具或其他用量统计 | 不等于最终账单 | Cost Attribution | 第 6、19-22 章 |
+| Finish Reason / Stop Reason | 模型停止生成或暂停的原因 | 不等于错误码 | Runtime / Output policy | 第 6、14-16 章 |
+| Media Artifact | 图片、音频、视频等生成结果的文件或对象引用 | 不应直接塞进普通文本字段 | Artifact Store / Event Gateway | 第 6、19、29 章 |
+| Response Adapter | 把供应商响应归一化为内部对象的组件 | 不等于简单字段重命名 | Model Gateway | 第 19、28 章 |
 
 ### RAG、知识库与记忆
 
@@ -400,6 +416,9 @@ AI / ML / DL / LLM
 | Agent Step | step、span、event、node execution、tool call | step 是业务执行单元，span 是观测单元，二者可能一对多或多对一 |
 | Tool Gateway | function executor、tool runtime、action handler、connector backend | 本书强调后端 policy、credential、audit，不只是调用适配 |
 | Model Gateway | model client、provider adapter、LLM service | 本书强调 model profile、usage、fallback、cost 和敏感数据策略 |
+| API Response | response object、message object、chat completion、stream event | 不同 provider 和 endpoint 字段不同，业务层应读取归一化对象 |
+| Content Block / Output Item | content block、output item、message content、tool_use | Anthropic 和 OpenAI 命名不同，不要把字段名当成跨供应商标准 |
+| Finish Reason / Stop Reason | finish_reason、stop_reason、response status | 它说明生成为什么停止，不等于 HTTP error |
 | Eval Harness | eval runner、dataset evaluator、experiment、trace grader | 本书强调样本、执行、评分、回归和发布门禁闭环 |
 | Context Builder | prompt builder、context assembler、retrieval context service | 本书强调权限过滤、trust label、脱敏和上下文快照 |
 | Approval Service | human-in-the-loop、confirmation、interrupt、approval workflow | 本书强调审批对象、输入 hash、重新校验和审计 |
@@ -686,10 +705,16 @@ Agent 性能不是一个延迟数字，而是一条链路的多段耗时。
 
 ## Sources
 
-以下来源按 2026-05-30 访问时理解；本章是本书的工程术语索引，不替代任何官方协议、SDK 或框架文档。OpenTelemetry GenAI semantic conventions 当前页面标注为 `Status: Development`，本章只引用其概念方向，不采用其字段作为稳定标准。RAG、JSON Schema、Spring AI、LangChain4j 等具体框架或 API 术语未在本章逐项重复引用，具体实现以对应章节的 Sources 和官方文档为准。
+以下来源按 2026-05-30 访问时理解；本轮新增的 OpenAI / Anthropic 响应格式术语来源按 2026-06-07 访问时理解。本章是本书的工程术语索引，不替代任何官方协议、SDK 或框架文档。OpenTelemetry GenAI semantic conventions 当前页面标注为 `Status: Development`，本章只引用其概念方向，不采用其字段作为稳定标准。RAG、JSON Schema、Spring AI、LangChain4j 等具体框架或 API 术语未在本章逐项重复引用，具体实现以对应章节的 Sources 和官方文档为准。
 
 - [OpenAI API: Agents](https://developers.openai.com/api/docs/guides/agents)
 - [OpenAI API: Computer use](https://developers.openai.com/api/docs/guides/tools-computer-use)
+- [OpenAI API Reference: Responses](https://developers.openai.com/api/reference/resources/responses/methods/create)
+- [OpenAI API Reference: Chat Completions](https://developers.openai.com/api/reference/resources/chat)
+- [OpenAI API: Audio and speech](https://developers.openai.com/api/docs/guides/audio)
+- [Anthropic Claude API: Overview](https://platform.claude.com/docs/en/api/overview)
+- [Anthropic Claude API: Streaming messages](https://platform.claude.com/docs/en/build-with-claude/streaming)
+- [Anthropic Claude API: Tool use with Claude](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
 - [Anthropic: Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
 - [Model Context Protocol Specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [A2A Protocol Specification](https://a2a-protocol.org/latest/specification/)
@@ -706,7 +731,7 @@ Agent 性能不是一个延迟数字，而是一条链路的多段耗时。
 ### 技术审稿人
 
 - 发现问题：术语表容易把本书工程抽象误写成官方标准，也容易把 MCP、A2A、OpenTelemetry 等规范字段泛化；Memory、Agent、Guardrail / Policy 等核心术语边界需要更严。
-- 修订动作：明确本章采用本书工程语义；补充官方术语与本书术语对照；收紧 Memory、A2A、Agent、Guardrail / Policy 定义；说明 OpenTelemetry GenAI semantic conventions 当前为 Development 状态；涉及官方协议和观测语义时只做概念级引用，并在 Sources 标注访问日期。
+- 修订动作：明确本章采用本书工程语义；补充官方术语与本书术语对照；收紧 Memory、A2A、Agent、Guardrail / Policy 定义；补充 API Response、Provider Response、Content Block、Output Item、Delta Event、Tool Call、Tool Result、Usage、Finish / Stop Reason、Media Artifact 和 Response Adapter 等返回格式术语；说明 OpenTelemetry GenAI semantic conventions 当前为 Development 状态；涉及官方协议和观测语义时只做概念级引用，并在 Sources 标注访问日期。
 - 结论：章节可以作为本书索引使用，但不会替代官方文档。
 
 ### 工程审稿人
